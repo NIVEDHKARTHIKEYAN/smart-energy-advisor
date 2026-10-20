@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Smart Energy Advisor</title>
+
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
+    <!-- Header -->
     <header class="header">
         <h2>⚡ Smart Energy Advisor</h2>
+
         <nav>
             <a href="#dashboard">Dashboard</a>
             <a href="#appliances">Appliances</a>
+            <a href="#categorySummary">Categories</a>
+            <a href="#billOptimizer">Bill Optimizer</a>
             <a href="#recommendations">AI Advisor</a>
+            <a href="login.html">Login</a>
         </nav>
     </header>
 
     <main class="container">
+
+        <!-- Electricity Dashboard -->
         <section id="dashboard">
             <h1>Electricity Dashboard</h1>
             <p>Monitor your electricity usage and optimize your bill.</p>
@@ -26,94 +35,182 @@
             <div class="cards">
                 <div class="card">
                     <h3>Monthly Usage</h3>
-                    <p><span id="usage">250</span> kWh</p>
+                    <p><span id="usage">0.00</span> kWh</p>
                 </div>
 
                 <div class="card">
                     <h3>Estimated Bill</h3>
-                    <p>₹<span id="bill">1500</span></p>
+                    <p>₹<span id="bill">0.00</span></p>
                 </div>
 
                 <div class="card">
                     <h3>Potential Savings</h3>
-                    <p>₹<span id="savings">300</span></p>
+                    <p>₹<span id="savings">0.00</span></p>
                 </div>
             </div>
         </section>
 
+        <!-- Appliance Calculator -->
         <section class="panel" id="appliances">
             <h2>Appliance Electricity Calculator</h2>
             <p>Enter appliance details to estimate electricity consumption.</p>
 
             <form id="applianceForm">
                 <label for="appliance">Appliance Name</label>
-                <input type="text" id="appliance"
-                       placeholder="e.g. Fan" required>
+                <input
+                    type="text"
+                    id="appliance"
+                    placeholder="e.g. Fan"
+                    required
+                >
+
+                <label for="category">Appliance Category</label>
+                <select id="category" required>
+                    <option value="Cooling">Cooling</option>
+                    <option value="Lighting">Lighting</option>
+                    <option value="Kitchen">Kitchen</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Other">Other</option>
+                </select>
 
                 <label for="watts">Power (Watts)</label>
-                <input type="number" id="watts"
-                       min="1" placeholder="e.g. 75" required>
+                <input
+                    type="number"
+                    id="watts"
+                    min="1"
+                    step="any"
+                    placeholder="e.g. 75"
+                    required
+                >
 
                 <label for="hours">Usage per Day (Hours)</label>
-                <input type="number" id="hours"
-                       min="0.1" max="24" step="0.1"
-                       placeholder="e.g. 8" required>
+                <input
+                    type="number"
+                    id="hours"
+                    min="0.1"
+                    max="24"
+                    step="0.1"
+                    placeholder="e.g. 8"
+                    required
+                >
 
                 <label for="days">Days Used per Month</label>
-                <input type="number" id="days"
-                       min="1" max="31" value="30" required>
+                <input
+                    type="number"
+                    id="days"
+                    min="1"
+                    max="31"
+                    value="30"
+                    required
+                >
 
                 <button type="submit">Add Appliance</button>
             </form>
+
+            <!-- Appliance List -->
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Appliance</th>
+                            <th>Category</th>
+                            <th>Power (W)</th>
+                            <th>Daily Hours</th>
+                            <th>Monthly Units (kWh)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applianceList"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Category-wise Electricity Usage -->
+        <section class="panel" id="categorySummary">
+            <h2>Category-wise Electricity Usage</h2>
+            <p>See how much electricity each category consumes monthly.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Monthly Usage (kWh)</th>
+                            <th>Estimated Cost (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryList"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Electricity Usage Chart -->
+        <section class="panel">
+            <h2>Electricity Consumption Chart</h2>
+            <canvas id="usageChart"></canvas>
+        </section>
+
+        <!-- Electricity Bill Optimizer -->
+        <section class="panel" id="billOptimizer">
+            <h2>Electricity Bill Optimizer</h2>
+            <p>Estimate potential savings by reducing appliance usage.</p>
+
+            <label for="reductionPercent">
+                Target reduction in electricity usage (%)
+            </label>
+
+            <input
+                type="number"
+                id="reductionPercent"
+                min="0"
+                max="80"
+                step="5"
+                value="20"
+            >
+
+            <button type="button" id="optimizeBtn">
+                Calculate Savings
+            </button>
+
+            <div id="optimizerResults" aria-live="polite"></div>
 
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
                             <th>Appliance</th>
-                            <th>Power</th>
-                            <th>Daily Hours</th>
-                            <th>Monthly Units</th>
+                            <th>Current Units (kWh)</th>
+                            <th>Optimized Units (kWh)</th>
+                            <th>Potential Savings (₹)</th>
                         </tr>
                     </thead>
-                    <tbody id="applianceList">
-                        <tr>
-                            <td>Fan</td>
-                            <td>75 W</td>
-                            <td>8</td>
-                            <td>18 kWh</td>
-                        </tr>
-                        <tr>
-                            <td>LED Bulb</td>
-                            <td>10 W</td>
-                            <td>6</td>
-                            <td>1.8 kWh</td>
-                        </tr>
-                    </tbody>
+                    <tbody id="optimizerList"></tbody>
                 </table>
             </div>
         </section>
 
-        <section class="panel">
-            <h2>Electricity Consumption Chart</h2>
-            <canvas id="usageChart"></canvas>
-        </section>
-
+        <!-- Energy Advisor -->
         <section class="panel" id="recommendations">
             <h2>AI Energy Advisor</h2>
+
             <p id="advice">
                 Tip: Switch off appliances when not in use to reduce electricity consumption.
             </p>
+
             <button id="recommendBtn" type="button">
                 Get Energy-Saving Tips
             </button>
         </section>
+
     </main>
 
+    <!-- Footer -->
     <footer>
         <p>AI-Based Smart Energy Advisor and Electricity Bill Optimizer</p>
     </footer>
 
+    <!-- JavaScript -->
     <script src="script.js"></script>
+
 </body>
 </html>

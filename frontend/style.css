@@ -237,3 +237,253 @@ footer {
         font-size: 25px;
     }
 }
+/* =====================================
+   LOGIN & REGISTRATION - SMART ENERGY
+===================================== */
+
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 35px 18px;
+    box-sizing: border-box;
+    background:
+        radial-gradient(circle at top left, #d1fae5 0, transparent 38%),
+        radial-gradient(circle at bottom right, #bfdbfe 0, transparent 40%),
+        linear-gradient(135deg, #f0fdf4, #eff6ff);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Main form card */
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 38px 34px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 22px;
+    box-shadow: 0 18px 50px rgba(15, 45, 65, 0.13);
+    animation: authAppear 0.55s ease;
+}
+
+/* Heading */
+.auth-card h1 {
+    margin: 0 0 12px;
+    color: #123047;
+    font-size: 29px;
+    line-height: 1.3;
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+}
+
+.auth-card > p {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+    margin: 0 0 24px;
+}
+
+/* Form labels */
+.auth-card label {
+    display: block;
+    margin: 17px 0 8px;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Input fields */
+.auth-card input {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 13px 14px;
+    box-sizing: border-box;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 1.5px solid #dbe4ee;
+    border-radius: 10px;
+    outline: none;
+    font-size: 15px;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+.auth-card input::placeholder {
+    color: #94a3b8;
+}
+
+.auth-card input:hover {
+    border-color: #94a3b8;
+}
+
+.auth-card input:focus {
+    background: #ffffff;
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+
+/* Main button */
+.auth-card button {
+    display: block;
+    width: 100%;
+    min-height: 50px;
+    margin: 26px 0 20px;
+    padding: 14px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #059669, #047857);
+    border: none;
+    border-radius: 11px;
+    box-shadow: 0 7px 16px rgba(5, 150, 105, 0.2);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+.auth-card button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(5, 150, 105, 0.28);
+    filter: brightness(1.04);
+}
+
+.auth-card button:active {
+    transform: translateY(0);
+}
+
+.auth-card button:focus-visible,
+.auth-card a:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 3px;
+}
+
+/* Links */
+.auth-card a {
+    color: #047857;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.auth-card a:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Status and error messages */
+#loginMessage,
+#registerMessage {
+    margin: 10px 0 16px;
+    padding: 0;
+    color: #b91c1c;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+/* Subtle entrance animation */
+@keyframes authAppear {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Registration form spacing */
+#registerForm input {
+    margin-bottom: 5px;
+}
+
+/* Responsive design for phones */
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 20px 14px;
+    }
+
+    .auth-card {
+        padding: 28px 22px;
+        border-radius: 17px;
+    }
+
+    .auth-card h1 {
+        font-size: 25px;
+    }
+
+    .auth-card input {
+        font-size: 16px;
+    }
+}
+
+/* Accessibility: reduce motion when requested */
+@media (prefers-reduced-motion: reduce) {
+    .auth-card {
+        animation: none;
+    }
+
+    .auth-card input,
+    .auth-card button,
+    .auth-card a {
+        transition: none;
+    }
+}
+/* Password Show/Hide Controls */
+
+.auth-card .password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.auth-card .password-wrapper input {
+    width: 100%;
+    min-width: 0;
+    padding-right: 72px;
+    margin-bottom: 0;
+}
+
+.auth-card .password-wrapper .toggle-password {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    padding: 7px 9px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    box-shadow: none;
+    color: #047857;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-card .password-wrapper .toggle-password:hover {
+    background: #ecfdf5;
+    color: #065f46;
+    box-shadow: none;
+    filter: none;
+    transform: translateY(-50%);
+}
+
+.auth-card .password-wrapper .toggle-password:active {
+    transform: translateY(-50%);
+}

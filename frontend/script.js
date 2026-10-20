@@ -1,134 +1,523 @@
-const appliances = [
-    { name: "Fan", watts: 75, hours: 8, days: 30 },
-    { name: "LED Bulb", watts: 10, hours: 6, days: 30 }
-];
+"use strict";
 
-const electricityRate = 6; // Sample rate in rupees per unit
+// Electricity rate in rupees per kWh (example rate)
+const electricityRate = 6;
 
-const applianceForm = document.getElementById("applianceForm");
-const applianceList = document.getElementById("applianceList");
+// Load saved appliances or create sample appliances
+let appliances = [];
+
+try {
+    const savedAppliances = localStorage.getItem("appliances");
+
+    if (savedAppliances !== null) {
+        const parsed = JSON.parse(savedAppliances);
+        appliances = Array.isArray(parsed) ? parsed : [];
+    } else {
+        appliances = [
+            {
+                id: 1,
+                name: "Fan",
+                category: "Cooling",
+                watts: 75,
+                hours: 8,
+                days: 30
+            },
+            {
+                id: 2,
+                name: "LED Bulb",
+                category: "Lighting",
+                watts: 10,
+                hours: 6,
+                days: 30
+            }
+        ];
+
+        localStorage.setItem("appliances", JSON.stringify(appliances));
+    }
+} catch (error) {
+    appliances = [];
+    console.error("Unable to load saved appliances:", error);
+}
+
+// Ensure existing appliances have categories and valid IDs
+appliances = appliances.map((item, index) => ({
+    ...item,
+    id: item.id ?? index + 1,
+    category: item.category || "Other"
+}));
+
+let nextId = Math.max(0, ...appliances.map(item => Number(item.id) || 0)) + 1;
+let editingId = null;
+let usageChart = null;
+
+// Existing HTML elements
+const form = document.getElementById("applianceForm");
+const list = document.getElementById("applianceList");
+const categoryList = document.getElementById("categoryList");
+const categoryInput = document.getElementById("category");
+
 const usageElement = document.getElementById("usage");
 const billElement = document.getElementById("bill");
 const savingsElement = document.getElementById("savings");
-const adviceElement = document.getElementById("advice");
 
-function getUnits(appliance) {
-    return (appliance.watts * appliance.hours * appliance.days) / 1000;
+const adviceElement = document.getElementById("advice");
+const recommendButton = document.getElementById("recommendBtn");
+
+// Optimizer elements
+const optimizeBtn = document.getElementById("optimizeBtn");
+const reductionInput = document.getElementById("reductionPercent");
+const optimizerResults = document.getElementById("optimizerResults");
+const optimizerList = document.getElementById("optimizerList");
+
+// Save appliances in the browser
+function saveAppliances() {
+    try {
+        localStorage.setItem("appliances", JSON.stringify(appliances));
+        return true;
+    } catch (error) {
+        console.error("Unable to save appliances:", error);
+        alert("Could not save data in this browser.");
+        return false;
+    }
 }
 
-function updateDashboard() {
-    const totalUnits = appliances.reduce(
-        (total, appliance) => total + getUnits(appliance), 0
-    );
+// Calculate monthly electricity consumption in kWh
+function getUnits(item) {
+    return (
+        Number(item.watts) *
+        Number(item.hours) *
+        Number(item.days)
+    ) / 1000;
+}
 
-    const bill = totalUnits * electricityRate;
-    const savings = bill * 0.20;
+// Safely create a table cell
+function createCell(value) {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    return cell;
+}
 
-    usageElement.textContent = totalUnits.toFixed(2);
-    billElement.textContent = bill.toFixed(2);
-    savingsElement.textContent = savings.toFixed(2);
+// Prevent HTML from being interpreted as markup
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function (char) {
+        const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        };
 
-    applianceList.innerHTML = "";
+        return entities[char];
+    });
+}
 
-    appliances.forEach(appliance => {
-        const row = document.createElement("tr");
+// Update category-wise electricity summary
+function updateCategorySummary() {
+    if (!categoryList) return;
 
-        [
-            appliance.name,
-            `${appliance.watts} W`,
-            appliance.hours,
-            `${getUnits(appliance).toFixed(2)} kWh`
-        ].forEach(value => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
+    const categoryUsage = {};
 
-        applianceList.appendChild(row);
+    appliances.forEach(item => {
+        const category = item.category || "Other";
+        categoryUsage[category] =
+            (categoryUsage[category] || 0) + getUnits(item);
     });
 
-    updateChart();
+    categoryList.innerHTML = "";
+
+    const categories = Object.entries(categoryUsage)
+        .sort((a, b) => b[1] - a[1]);
+
+    if (categories.length === 0) {
+        categoryList.innerHTML =
+            '<tr><td colspan="3">No appliances added yet.</td></tr>';
+        return;
+    }
+
+    categories.forEach(([category, units]) => {
+        const row = document.createElement("tr");
+
+        row.appendChild(createCell(category));
+        row.appendChild(createCell(units.toFixed(2)));
+        row.appendChild(
+            createCell("₹" + (units * electricityRate).toFixed(2))
+        );
+
+        categoryList.appendChild(row);
+    });
 }
 
-applianceForm.addEventListener("submit", function(event) {
-    event.preventDefault();
+// Update the dashboard and appliance table
+function updateDashboard() {
+    const totalUnits = appliances.reduce(
+        (sum, item) => sum + getUnits(item),
+        0
+    );
 
-    const name = document.getElementById("appliance").value.trim();
-    const watts = Number(document.getElementById("watts").value);
-    const hours = Number(document.getElementById("hours").value);
-    const days = Number(document.getElementById("days").value);
+    const totalBill = totalUnits * electricityRate;
+    const potentialSavings = totalBill * 0.20;
 
-    if (!name || watts <= 0 || hours <= 0 || hours > 24 ||
-        days < 1 || days > 31) {
-        alert("Please enter valid appliance details.");
-        return;
+    if (usageElement) {
+        usageElement.textContent = totalUnits.toFixed(2);
     }
 
-    appliances.push({ name, watts, hours, days });
+    if (billElement) {
+        billElement.textContent = totalBill.toFixed(2);
+    }
 
-    applianceForm.reset();
-    document.getElementById("days").value = 30;
+    if (savingsElement) {
+        savingsElement.textContent = potentialSavings.toFixed(2);
+    }
 
-    updateDashboard();
-});
+    if (list) {
+        list.innerHTML = "";
 
+        if (appliances.length === 0) {
+            list.innerHTML =
+                '<tr><td colspan="6">No appliances added yet.</td></tr>';
+        }
+
+        appliances.forEach(item => {
+            const row = document.createElement("tr");
+
+            row.appendChild(createCell(item.name));
+            row.appendChild(createCell(item.category || "Other"));
+            row.appendChild(createCell(item.watts + " W"));
+            row.appendChild(createCell(item.hours + " hours"));
+            row.appendChild(createCell(getUnits(item).toFixed(2)));
+
+            const actions = document.createElement("td");
+
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.textContent = "Edit";
+
+            editButton.addEventListener("click", function () {
+                document.getElementById("appliance").value = item.name;
+                categoryInput.value = item.category || "Other";
+                document.getElementById("watts").value = item.watts;
+                document.getElementById("hours").value = item.hours;
+                document.getElementById("days").value = item.days;
+
+                editingId = item.id;
+
+                const submitButton = form.querySelector(
+                    'button[type="submit"]'
+                );
+
+                if (submitButton) {
+                    submitButton.textContent = "Update Appliance";
+                }
+
+                form.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            });
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+
+            deleteButton.addEventListener("click", function () {
+                if (!confirm("Delete " + item.name + "?")) return;
+
+                const previousAppliances = appliances;
+                appliances = appliances.filter(
+                    appliance => appliance.id !== item.id
+                );
+
+                if (!saveAppliances()) {
+                    appliances = previousAppliances;
+                    return;
+                }
+
+                if (editingId === item.id) {
+                    editingId = null;
+                    form.reset();
+
+                    const submitButton = form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+                    if (submitButton) {
+                        submitButton.textContent = "Add Appliance";
+                    }
+                }
+
+                updateDashboard();
+                updateOptimizer();
+            });
+
+            actions.appendChild(editButton);
+            actions.appendChild(document.createTextNode(" "));
+            actions.appendChild(deleteButton);
+
+            row.appendChild(actions);
+            list.appendChild(row);
+        });
+    }
+
+    updateChart();
+    updateCategorySummary();
+}
+
+// Add or update an appliance
+if (form) {
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const name = document.getElementById("appliance").value.trim();
+        const category = categoryInput.value;
+        const watts = Number(document.getElementById("watts").value);
+        const hours = Number(document.getElementById("hours").value);
+        const days = Number(document.getElementById("days").value);
+
+        if (
+            !name ||
+            !Number.isFinite(watts) ||
+            !Number.isFinite(hours) ||
+            !Number.isFinite(days) ||
+            watts <= 0 ||
+            hours <= 0 ||
+            hours > 24 ||
+            days < 1 ||
+            days > 31
+        ) {
+            alert("Please enter valid appliance details.");
+            return;
+        }
+
+        const previousAppliances = appliances.map(item => ({ ...item }));
+
+        if (editingId !== null) {
+            appliances = appliances.map(item =>
+                item.id === editingId
+                    ? { ...item, name, category, watts, hours, days }
+                    : item
+            );
+        } else {
+            appliances.push({
+                id: nextId++,
+                name,
+                category,
+                watts,
+                hours,
+                days
+            });
+        }
+
+        if (!saveAppliances()) {
+            appliances = previousAppliances;
+            return;
+        }
+
+        editingId = null;
+        form.reset();
+        document.getElementById("days").value = 30;
+
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        if (submitButton) {
+            submitButton.textContent = "Add Appliance";
+        }
+
+        updateDashboard();
+        updateOptimizer();
+    });
+}
+
+// Electricity consumption chart
 function updateChart() {
-    if (typeof Chart === "undefined") {
-        console.warn("Chart.js could not load. Check your internet connection.");
-        return;
+    const canvas = document.getElementById("usageChart");
+
+    if (!canvas || typeof Chart === "undefined") return;
+
+    const labels = appliances.map(item => item.name);
+    const units = appliances.map(item => getUnits(item));
+
+    if (usageChart) {
+        usageChart.destroy();
     }
 
-    const labels = appliances.map(appliance => appliance.name);
-    const units = appliances.map(appliance => getUnits(appliance));
-
-    if (window.usageChart instanceof Chart) {
-        window.usageChart.destroy();
-    }
-
-    window.usageChart = new Chart(
-        document.getElementById("usageChart"),
-        {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Monthly electricity usage (kWh)",
-                    data: units,
-                    backgroundColor: "#20a464"
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: "Units (kWh)"
-                        }
+    usageChart = new Chart(canvas, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Monthly Usage (kWh)",
+                data: units,
+                backgroundColor: "#36a2eb",
+                borderColor: "#2185c5",
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "Energy (kWh)"
                     }
                 }
             }
         }
-    );
+    });
 }
 
-document.getElementById("recommendBtn").addEventListener("click", function() {
-    const totalUnits = appliances.reduce(
-        (total, appliance) => total + getUnits(appliance), 0
-    );
+// Energy-saving recommendations
+if (recommendButton && adviceElement) {
+    recommendButton.addEventListener("click", function () {
+        if (appliances.length === 0) {
+            adviceElement.textContent =
+                "Add appliances first to receive energy-saving recommendations.";
+            return;
+        }
 
-    const totalBill = totalUnits * electricityRate;
+        const applianceUsage = appliances.map(item => ({
+            ...item,
+            units: getUnits(item)
+        }));
 
-    if (totalUnits === 0) {
-        adviceElement.textContent = "Add appliances to receive energy-saving tips.";
-    } else {
+        const totalUnits = applianceUsage.reduce(
+            (sum, item) => sum + item.units,
+            0
+        );
+
+        const highestConsumer = applianceUsage.reduce(
+            (highest, item) =>
+                item.units > highest.units ? item : highest
+        );
+
+        const tips = [];
+
+        if (highestConsumer.units > 0) {
+            tips.push(
+                highestConsumer.name + " consumes the most electricity (" +
+                highestConsumer.units.toFixed(2) +
+                " kWh per month). Consider reducing its usage."
+            );
+        }
+
+        applianceUsage.forEach(item => {
+            if (item.hours >= 8) {
+                tips.push(
+                    item.name + " runs for " + item.hours +
+                    " hours daily. Reduce its usage where practical."
+                );
+            }
+        });
+
+        const lightingUnits = applianceUsage
+            .filter(item => item.category === "Lighting")
+            .reduce((sum, item) => sum + item.units, 0);
+
+        if (lightingUnits > 0) {
+            tips.push(
+                "Use energy-efficient LED lights and switch them off when not needed."
+            );
+        }
+
+        const coolingUnits = applianceUsage
+            .filter(item => item.category === "Cooling")
+            .reduce((sum, item) => sum + item.units, 0);
+
+        if (coolingUnits > 0) {
+            tips.push(
+                "Use efficient settings for cooling appliances and avoid unnecessary operation."
+            );
+        }
+
+        if (tips.length === 0) {
+            tips.push(
+                "Continue switching off appliances when they are not needed."
+            );
+        }
+
         adviceElement.textContent =
-            `Your estimated monthly usage is ${totalUnits.toFixed(2)} units ` +
-            `and your bill is ₹${totalBill.toFixed(2)}. ` +
-            `Try reducing high-power appliance usage by 1 hour daily. ` +
-            `Your actual savings depend on appliance power and your tariff.`;
-    }
-});
+            "Monthly usage: " + totalUnits.toFixed(2) +
+            " kWh. Estimated bill: ₹" +
+            (totalUnits * electricityRate).toFixed(2) +
+            ". Recommendations: " + tips.join(" ");
+    });
+}
 
+// Electricity Bill Optimizer
+function updateOptimizer() {
+    if (!optimizerList || !optimizerResults) return;
+
+    const reduction = Number(reductionInput.value);
+
+    if (
+        reductionInput.value.trim() === "" ||
+        !Number.isFinite(reduction) ||
+        reduction < 0 ||
+        reduction > 80
+    ) {
+        optimizerResults.textContent =
+            "Enter a reduction between 0% and 80%.";
+        optimizerList.innerHTML = "";
+        return;
+    }
+
+    if (appliances.length === 0) {
+        optimizerResults.textContent =
+            "Add appliances first to calculate potential savings.";
+        optimizerList.innerHTML =
+            '<tr><td colspan="4">No appliances added yet.</td></tr>';
+        return;
+    }
+
+    const factor = 1 - reduction / 100;
+    let currentUnits = 0;
+    let optimizedUnits = 0;
+
+    optimizerList.innerHTML = "";
+
+    appliances.forEach(item => {
+        const units = getUnits(item);
+        const newUnits = units * factor;
+        const savings = (units - newUnits) * electricityRate;
+
+        currentUnits += units;
+        optimizedUnits += newUnits;
+
+        const row = document.createElement("tr");
+
+        row.appendChild(createCell(item.name));
+        row.appendChild(createCell(units.toFixed(2)));
+        row.appendChild(createCell(newUnits.toFixed(2)));
+        row.appendChild(createCell("₹" + savings.toFixed(2)));
+
+        optimizerList.appendChild(row);
+    });
+
+    const currentBill = currentUnits * electricityRate;
+    const optimizedBill = optimizedUnits * electricityRate;
+    const totalSavings = currentBill - optimizedBill;
+
+    optimizerResults.textContent =
+        "Target reduction: " + reduction + "% | " +
+        "Current usage: " + currentUnits.toFixed(2) + " kWh | " +
+        "Optimized usage: " + optimizedUnits.toFixed(2) + " kWh | " +
+        "Current bill: ₹" + currentBill.toFixed(2) + " | " +
+        "Optimized bill: ₹" + optimizedBill.toFixed(2) + " | " +
+        "Potential savings: ₹" + totalSavings.toFixed(2);
+}
+
+if (optimizeBtn && reductionInput) {
+    optimizeBtn.addEventListener("click", updateOptimizer);
+
+    reductionInput.addEventListener("input", function () {
+        optimizerResults.textContent =
+            "Click Calculate Savings to update your estimate.";
+    });
+}
+
+// Initialize the page
 updateDashboard();
+updateOptimizer();
