@@ -23,15 +23,30 @@ def home():
     })
 
 
-@app.route("/api/bill", methods=["GET"])
+@app.route("/api/bill", methods=["POST"])
 def get_bill():
-    units = 100
-    rate = 5
+    data = request.get_json(silent=True) or {}
+
+    try:
+        units = float(data.get("units_consumed", 0))
+        rate = float(data.get("rate_per_unit", 0))
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "Units and rate must be numbers"
+        }), 400
+
+    if not (0 < units <= 1_000_000 and 0 < rate <= 1_000_000):
+        return jsonify({
+            "error": "Units and rate must be positive and within allowed limits"
+        }), 400
+
+    bill = units * rate
+
     return jsonify({
         "units_consumed": units,
         "rate_per_unit": rate,
-        "estimated_bill": units * rate
-    })
+        "estimated_bill": round(bill, 2)
+    }), 200
 
 
 @app.route("/api/records", methods=["POST"])
