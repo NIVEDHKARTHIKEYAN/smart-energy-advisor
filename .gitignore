@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.py[cod]
+energy.db
+backend/energy.db
+.env
