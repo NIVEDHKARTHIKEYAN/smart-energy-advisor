@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Smart Energy Advisor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="register.js" defer></script>
+<script src="password-toggle.js" defer></script>
+</head>
+<body>
+    <main class="auth-container">
+        <form id="registerForm" class="auth-card">
+            <h1>⚡ Create Account</h1>
+            <p>Join Smart Energy Advisor.</p>
+
+            <label for="name">Full Name</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter your full name"
+                autocomplete="name"
+                required
+            >
+
+            <label for="email">Email Address</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email"
+                autocomplete="email"
+                required
+            >
+
+            <label for="password">Password</label>
+            <div class="password-wrapper">
+    <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="At least 8 characters"
+        minlength="8"
+        autocomplete="new-password"
+        required
+    >
+    <button
+        type="button"
+        class="toggle-password"
+        data-target="password"
+        aria-label="Show password"
+        aria-pressed="false"
+    >Show</button>
+</div>
+
+            <label for="confirmPassword">Confirm Password</label>
+           <div class="password-wrapper">
+    <input
+        type="password"
+        id="confirmPassword"
+        name="confirmPassword"
+        placeholder="Re-enter your password"
+        minlength="8"
+        autocomplete="new-password"
+        required
+    >
+    <button
+        type="button"
+        class="toggle-password"
+        data-target="confirmPassword"
+        aria-label="Show password"
+        aria-pressed="false"
+    >Show</button>
+</div>
+
+            <button type="submit">Register</button>
+            <p id="registerMessage" role="status" aria-live="polite"></p>
+
+            <p>Already have an account?
+                <a href="login.html">Login here</a>
+            </p>
+
+            <a href="index.html">Back to Dashboard</a>
+        </form>
+    </main>
+</body>
+</html>
